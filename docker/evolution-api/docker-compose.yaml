@@ -1,0 +1,87 @@
+services:
+  api:
+    container_name: evolution_api
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - evolution-net
+    ports:
+      - 4000:8080
+
+  postgres:
+    container_name: evolution_postgres
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST_AUTH_METHOD
+    command: ["postgres", "-c", "max_connections=1000"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution-net
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+# Uncomment the following section if you want to use pgAdmin for database management
+# Note: Ensure that the environment variables PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD are set
+#  pgadmin:
+#    container_name: evolution_pgadmin
+#    image: dpage/pgadmin4:latest
+#    restart: always
+#    environment:
+#      - PGADMIN_DEFAULT_EMAIL
+#      - PGADMIN_DEFAULT_PASSWORD
+#    volumes:
+#      - pgadmin_data:/var/lib/pgadmin
+#    networks:
+#      - evolution-net
+#    ports:
+#      - 4003:80
+
+  redis:
+    container_name: evolution_redis
+    image: redis:latest
+    restart: always
+    command: >
+      redis-server --port 6379 --appendonly yes
+    volumes:
+      - evolution_redis:/data
+    networks:
+      - evolution-net
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  evolution_instances:
+  postgres_data:
+#  pgadmin_data:
+  evolution_redis:
+
+
+networks:
+  evolution-net:
+    name: evolution-net
+    driver: bridge
