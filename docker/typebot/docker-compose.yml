@@ -1,0 +1,71 @@
+x-typebot-common: &typebot-common
+  restart: always
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  networks:
+    - typebot-net
+  env_file: .env
+  environment:
+    REDIS_URL: redis://redis:6379
+
+services:
+  postgres:
+    container_name: typebot_postgres
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_PASSWORD
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - typebot-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: typebot_redis
+    image: redis:alpine
+    restart: always
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - typebot-net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+
+  typebot-builder:
+    <<: *typebot-common
+    container_name: typebot_builder
+    image: baptistearno/typebot-builder:latest
+    ports:
+      - "4002:3000"
+
+  typebot-viewer:
+    <<: *typebot-common
+    container_name: typebot_viewer
+    image: baptistearno/typebot-viewer:latest
+    ports:
+      - "4003:3000"
+
+
+volumes:
+  db-data:
+  redis-data:
+
+
+networks:
+  typebot-net:
+    name: typebot-net
+    driver: bridge
