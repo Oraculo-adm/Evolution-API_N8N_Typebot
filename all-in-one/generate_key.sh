@@ -1,7 +1,7 @@
 #!/bin/bash
 ENV_FILE="envs/databases.env"
 PLACEHOLDER="your_random_string"
-LINE_NUMBER=48
+LINE_NUMBER=68
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Erro: O arquivo '$ENV_FILE' não foi encontrado."
