@@ -17,6 +17,8 @@ services:
       - N8N_CUSTOM_EXTENSIONS
       - N8N_DEFAULT_LOCALE
       - GENERIC_TIMEZONE=${TZ}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
     volumes:
       - n8n_storage:/home/node/.n8n
     networks:

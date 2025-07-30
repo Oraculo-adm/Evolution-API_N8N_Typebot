@@ -60,12 +60,4 @@ services:
       - "4003:3000"
 
 
-volumes:
-  db-data:
-  redis-data:
 
-
-networks:
-  typebot-net:
-    name: typebot-net
-    driver: bridge

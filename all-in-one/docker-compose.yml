@@ -1,0 +1,176 @@
+  # --- ANCORAS ---
+x-services: &services
+  restart: always
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+  networks:
+    - app-net
+
+x-databases: &databases
+  restart: always
+  env_file:
+    - ./envs/databases.env
+  networks:
+    - app-net
+
+
+  # --- DATABASES ---
+services:
+  postgres:
+    <<: *databases
+    container_name: postgres
+    image: pgvector/pgvector:pg16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - app-net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ROOT_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    <<: *databases
+    container_name: redis
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    <<: *databases
+    container_name: minio
+    image: minio/minio:RELEASE.2025-05-24T17-08-30Z-cpuv1
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # Porta do serviço S3
+      - "9001:9001"  # Porta do console de administração
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- APLICAÇÕES ---
+  evolution_api:
+    <<: *services
+    container_name: evolution_api
+    image: evoapicloud/evolution-api:2.3.1
+    env_file:
+      - ./envs/evolution_api.env
+      - ./envs/databases.env
+    volumes:
+      - evolution_data:/evolution/instances
+    ports:
+      - 8080:8080
+
+  n8n:
+    <<: *services
+    container_name: n8n
+    image: n8nio/n8n:stable
+    env_file:
+      - ./envs/n8n.env
+      - ./envs/databases.env
+    volumes:
+      - n8n_data:/var/run/n8n
+    ports:
+      - 5678:5678
+
+  chatwoot_rails:
+    <<: *services
+    container_name: chatwoot_rails
+    image: chatwoot/chatwoot:v4.4.0
+    env_file:
+      - ./envs/chatwoot.env
+      - ./envs/databases.env
+    volumes:
+      - chatwoot_data:/app/storage
+    ports:
+      - '80:3000'
+    environment:
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+
+  chatwoot_sidekiq:
+    <<: *services
+    container_name: chatwoot_sidekiq
+    image: chatwoot/chatwoot:v4.4.0
+    env_file:
+      - ./envs/chatwoot.env
+      - ./envs/databases.env
+    volumes:
+      - chatwoot_data:/app/storage
+    environment:
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+
+# Uncomment the following section if you want to use Typebot Builder, Typebot Viewer and PgAdmin
+#
+#  typebot-builder:
+#    <<: *services
+#    container_name: typebot_builder
+#    image: baptistearno/typebot-builder:latest
+#    env_file:
+#      - ./envs/typebot.env
+#      - ./envs/databases.env
+#    ports:
+#      - "3000:3000"
+#
+#  typebot-viewer:
+#    <<: *services
+#    container_name: typebot_viewer
+#    image: baptistearno/typebot-viewer:latest
+#    env_file:
+#      - ./envs/typebot.env
+#      - ./envs/databases.env
+#    ports:
+#      - "3001:3000"
+#
+#  pgadmin:
+#    <<: *services
+#    container_name: pgadmin
+#    image: dpage/pgadmin4:latest
+#    environment:
+#      - PGADMIN_DEFAULT_EMAIL=
+#      - PGADMIN_DEFAULT_PASSWORD=
+#    volumes:
+#      - pgadmin_data:/var/lib/pgadmin
+#    ports:
+#      - 4000:80
+
+
+# --- VOLUMES ---
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  evolution_data:
+  n8n_data:
+  chatwoot_data:
+  pgadmin_data:
+
+# --- NETWORKS ---
+networks:
+  app-net:
+    name: app-net
+    driver: bridge
