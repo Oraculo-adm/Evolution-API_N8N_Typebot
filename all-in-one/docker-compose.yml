@@ -1,4 +1,4 @@
-  # --- ANCORAS ---
+   # --- ANCHORS ---
 x-services: &services
   restart: always
   depends_on:
@@ -6,8 +6,8 @@ x-services: &services
       condition: service_healthy
     postgres:
       condition: service_healthy
-    minio:
-      condition: service_healthy
+    minio-mc:
+      condition: service_completed_successfully
   networks:
     - app-net
 
@@ -65,6 +65,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  minio-mc:
+    container_name: minio-mc
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy 
+    env_file:
+      - ./envs/databases.env
+    volumes:
+      - ./init-minio.sh:/app/init-minio.sh
+    entrypoint: /bin/sh -c "/app/init-minio.sh"  
 
   # --- APLICAÇÕES ---
   evolution_api:
