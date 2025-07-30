@@ -80,7 +80,7 @@ services:
   evolution_api:
     <<: *services
     container_name: evolution_api
-    image: evoapicloud/evolution-api:2.3.1
+    image: evoapicloud/evolution-api:v2.3.1
     env_file:
       - ./envs/evolution_api.env
       - ./envs/databases.env
