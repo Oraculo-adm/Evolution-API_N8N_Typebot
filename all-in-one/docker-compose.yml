@@ -75,6 +75,8 @@ services:
     volumes:
       - ./init-minio.sh:/app/init-minio.sh
     entrypoint: /bin/sh -c "/app/init-minio.sh"  
+    networks:
+      - app-net
 
   # --- APLICAÇÕES ---
   evolution_api:
@@ -82,8 +84,8 @@ services:
     container_name: evolution_api
     image: evoapicloud/evolution-api:v2.3.1
     env_file:
-      - ./envs/evolution_api.env
       - ./envs/databases.env
+      - ./envs/evolution_api.env
     volumes:
       - evolution_data:/evolution/instances
     ports:
@@ -94,8 +96,8 @@ services:
     container_name: n8n
     image: n8nio/n8n:stable
     env_file:
-      - ./envs/n8n.env
       - ./envs/databases.env
+      - ./envs/n8n.env
     volumes:
       - n8n_data:/var/run/n8n
     ports:
@@ -106,8 +108,8 @@ services:
     container_name: chatwoot_rails
     image: chatwoot/chatwoot:v4.4.0
     env_file:
-      - ./envs/chatwoot.env
       - ./envs/databases.env
+      - ./envs/chatwoot.env
     volumes:
       - chatwoot_data:/app/storage
     ports:
@@ -124,8 +126,8 @@ services:
     container_name: chatwoot_sidekiq
     image: chatwoot/chatwoot:v4.4.0
     env_file:
-      - ./envs/chatwoot.env
       - ./envs/databases.env
+      - ./envs/chatwoot.env
     volumes:
       - chatwoot_data:/app/storage
     environment:
@@ -141,8 +143,8 @@ services:
 #    container_name: typebot_builder
 #    image: baptistearno/typebot-builder:latest
 #    env_file:
-#      - ./envs/typebot.env
 #      - ./envs/databases.env
+#      - ./envs/typebot.env
 #    ports:
 #      - "3000:3000"
 #
@@ -151,8 +153,8 @@ services:
 #    container_name: typebot_viewer
 #    image: baptistearno/typebot-viewer:latest
 #    env_file:
-#      - ./envs/typebot.env
 #      - ./envs/databases.env
+#      - ./envs/typebot.env
 #    ports:
 #      - "3001:3000"
 #

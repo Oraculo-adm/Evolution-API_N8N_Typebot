@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-sleep 5
+sleep 10
 mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
 for bucket in $(echo ${MINIO_BUCKETS} | tr ',' ' '); do
   # Verifica se o bucket já existe
