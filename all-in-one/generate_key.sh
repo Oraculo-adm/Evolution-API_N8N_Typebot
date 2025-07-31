@@ -1,25 +1,43 @@
 #!/bin/bash
+#
+# Script para gerar e atualizar chaves de segurança de forma segura e flexível.
+# Ele encontra as chaves pelo nome e substitui qualquer valor existente.
+#
+
 ENV_FILE="envs/databases.env"
-PLACEHOLDER="your_random_string"
-LINE_NUMBER=5
 
 if [ ! -f "$ENV_FILE" ]; then
-  echo "Erro: O arquivo '$ENV_FILE' não foi encontrado."
-  echo "Execute 'create-envs.sh' primeiro para criar os arquivos de ambiente."
+  echo "❌ Erro: O arquivo '$ENV_FILE' não foi encontrado."
+  echo "   Execute 'create-envs.sh' primeiro para criar os arquivos de ambiente."
   exit 1
 fi
 
-NEW_KEY=$(openssl rand -hex 32)
+update_key() {
+  local KEY_NAME=$1
+  local NEW_VALUE=$2
+
+  if grep -q "^${KEY_NAME}=" "$ENV_FILE"; then
+    sed -i "s|^${KEY_NAME}=.*|${KEY_NAME}=${NEW_VALUE}|" "$ENV_FILE"
+    echo "✅ Chave '${KEY_NAME}' foi atualizada com sucesso."
+  else
+    echo "⚠️ AVISO: Chave '${KEY_NAME}' não encontrada em '$ENV_FILE'. Nenhuma alteração foi feita."
+  fi
+}
 
 echo "-------------------------------------------------"
-echo "Sua nova chave de segurança gerada é:"
-echo "$NEW_KEY"
+echo "🔑 Chaves Geradas (apenas para visualização):"
+NEW_REGKEY=$(openssl rand -hex 24)
+echo "REGKEY:     $NEW_REGKEY"
+NEW_MINIO_ACCESS_KEY=$(openssl rand -hex 8)
+echo "MINIO_ACCESS_KEY:   $NEW_MINIO_ACCESS_KEY"
+NEW_MINIO_SECRET_KEY=$(openssl rand -hex 12)
+echo "MINIO_SECRET_KEY: $NEW_MINIO_SECRET_KEY"
 echo "-------------------------------------------------"
-
-if grep -q "$PLACEHOLDER" <<< "$(sed -n "${LINE_NUMBER}p" "$ENV_FILE")"; then
-  sed -i "${LINE_NUMBER}s/${PLACEHOLDER}/${NEW_KEY}/" "$ENV_FILE"
-  echo "A chave foi atualizada com sucesso no arquivo '$ENV_FILE' na linha ${LINE_NUMBER}."
-else
-  echo "AVISO: O texto '${PLACEHOLDER}' não foi encontrado na linha ${LINE_NUMBER} do arquivo '$ENV_FILE'."
-  echo "Nenhuma alteração foi feita no arquivo."
-fi
+echo "🔄 Gerando e atualizando novas chaves de segurança..."
+echo "-------------------------------------------------"
+update_key "REGKEY" "$NEW_REGKEY"
+update_key "MINIO_ACCESS_KEY" "$NEW_MINIO_ACCESS_KEY"
+update_key "MINIO_SECRET_KEY" "$NEW_MINIO_SECRET_KEY"
+echo "-------------------------------------------------"
+echo "✨ Processo concluído!"
+echo "-------------------------------------------------"
