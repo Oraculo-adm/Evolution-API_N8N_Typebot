@@ -27,6 +27,9 @@ if [ -n "${CHATWOOT_DB_USER:-}" ] && [ -n "${CHATWOOT_DB_PASSWORD:-}" ]; then
         GRANT ALL PRIVILEGES ON DATABASE ${CHATWOOT_DB_NAME} TO ${CHATWOOT_DB_USER};
     "
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${CHATWOOT_DB_NAME}" -c "GRANT CREATE ON SCHEMA public TO ${CHATWOOT_DB_USER};"
+    # Adiciona as extensões necessárias como superusuário
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${CHATWOOT_DB_NAME}" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${CHATWOOT_DB_NAME}" -c "CREATE EXTENSION IF NOT EXISTS vector;"
 fi
 
 # --- Criação para Evolution API ---
