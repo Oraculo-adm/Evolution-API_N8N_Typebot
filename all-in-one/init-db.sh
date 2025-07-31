@@ -1,10 +1,6 @@
 #!/bin/bash
-# Este script executa comandos SQL para criar os bancos de dados e usuários
-# necessários para cada aplicação, mas apenas se as variáveis de ambiente
-# correspondentes estiverem definidas.
 set -e
 
-# Função para executar o SQL. Evita repetição de código.
 execute_sql() {
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
         $1
@@ -19,6 +15,7 @@ if [ -n "${N8N_DB_USER:-}" ] && [ -n "${N8N_DB_PASSWORD:-}" ]; then
         CREATE DATABASE ${N8N_DB_NAME};
         GRANT ALL PRIVILEGES ON DATABASE ${N8N_DB_NAME} TO ${N8N_DB_USER};
     "
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${N8N_DB_NAME}" -c "GRANT CREATE ON SCHEMA public TO ${N8N_DB_USER};"
 fi
 
 # --- Criação para Chatwoot ---
@@ -29,6 +26,7 @@ if [ -n "${CHATWOOT_DB_USER:-}" ] && [ -n "${CHATWOOT_DB_PASSWORD:-}" ]; then
         CREATE DATABASE ${CHATWOOT_DB_NAME};
         GRANT ALL PRIVILEGES ON DATABASE ${CHATWOOT_DB_NAME} TO ${CHATWOOT_DB_USER};
     "
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${CHATWOOT_DB_NAME}" -c "GRANT CREATE ON SCHEMA public TO ${CHATWOOT_DB_USER};"
 fi
 
 # --- Criação para Evolution API ---
@@ -39,6 +37,7 @@ if [ -n "${EVOLUTION_DB_USER:-}" ] && [ -n "${EVOLUTION_DB_PASSWORD:-}" ]; then
         CREATE DATABASE ${EVOLUTION_DB_NAME};
         GRANT ALL PRIVILEGES ON DATABASE ${EVOLUTION_DB_NAME} TO ${EVOLUTION_DB_USER};
     "
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${EVOLUTION_DB_NAME}" -c "GRANT CREATE ON SCHEMA public TO ${EVOLUTION_DB_USER};"
 fi
 
 # --- Criação para Typebot ---
@@ -49,6 +48,7 @@ if [ -n "${TYPEBOT_DB_USER:-}" ] && [ -n "${TYPEBOT_DB_PASSWORD:-}" ]; then
         CREATE DATABASE ${TYPEBOT_DB_NAME};
         GRANT ALL PRIVILEGES ON DATABASE ${TYPEBOT_DB_NAME} TO ${TYPEBOT_DB_USER};
     "
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${TYPEBOT_DB_NAME}" -c "GRANT CREATE ON SCHEMA public TO ${TYPEBOT_DB_USER};"
 fi
 
 echo "Script de inicialização do banco de dados concluído."

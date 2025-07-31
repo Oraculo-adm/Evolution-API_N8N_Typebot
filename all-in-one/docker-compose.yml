@@ -25,9 +25,12 @@ services:
     <<: *databases
     container_name: postgres
     image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    command: ["postgres", "-c", "max_connections=1000"]
     ports:
       - "5432:5432"
     healthcheck:
@@ -42,6 +45,7 @@ services:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 10s
@@ -118,8 +122,7 @@ services:
       - NODE_ENV=production
       - RAILS_ENV=production
       - INSTALLATION_ENV=docker
-    entrypoint: docker/entrypoints/rails.sh
-    command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+    command: sh -c "bundle exec rake db:prepare; bundle exec rails s -p 3000 -b 0.0.0.0"
 
   chatwoot_sidekiq:
     <<: *services
