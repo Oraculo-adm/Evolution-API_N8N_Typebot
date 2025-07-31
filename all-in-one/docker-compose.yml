@@ -96,14 +96,25 @@ services:
       - 8080:8080
 
   n8n:
-    <<: *services
     container_name: n8n
     image: n8nio/n8n:stable
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio-mc:
+        condition: service_completed_successfully
     env_file:
       - ./envs/databases.env
       - ./envs/n8n.env
     volumes:
       - n8n_data:/var/run/n8n
+    networks:
+      app-net:
+        aliases:
+          - n8n.docker
     ports:
       - 5678:5678
 
